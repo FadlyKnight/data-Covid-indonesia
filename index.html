@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+	
+	<!-- Mapbox -->
+	<script src='https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js'></script>
+	<link href='https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css' rel='stylesheet' />
+
+	<!-- Bootstrap -->
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+	<!-- Datatables -->
+	<link rel="stylesheet" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css">
+	
+	<style>
+		th, td {
+			text-align: center;
+		}
+	</style>
+</head>
+<body>
+
+	<div class="container">
+		<!-- MAP COVID -->
+		<div id='map' style='width: 100%; height: 400px;'></div>
+		
+		<!-- Total COvid -->
+		<div style="padding: 10px 0;">
+			<h1 class="text-center">DATA COVID - 19 di Indonesia</h1>
+			<div class="row" style="">
+				<div class="col-4 p-3">
+					<div class="btn-primary text-center p-5">
+						<h3 class="text-white">Total Postif</h3>
+						<h2 class="text-bold" id="Kasus_Posi">000.000</h2>
+					</div>
+				</div>
+				<div class="col-4 p-3">
+					<div class="btn-success text-center p-5">
+						<h3 class="text-white">Total Sembuh</h3>
+						<h2 class="text-bold" id="Kasus_Semb">000.000</h2>
+					</div>
+				</div>
+				<div class="col-4 p-3">
+					<div class="btn-danger text-center p-5">
+						<h3 class="text-white">Total Meninggal</h3>
+						<h2 class="text-bold" id="Kasus_Meni">000.000</h2>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Tabel Covid -->
+		<div class="px-5">
+			<div class="">
+				
+				<div class="">
+					<table id="tabelCovid" class="table table-hover table-striped">
+						 <thead>
+							<tr>
+								<th>FID</th>
+								<th>Provinsi</th>
+								<th>Kasus Postif</th>
+								<th>Kasus Sembuh</th>
+								<th>Kasus Meninggal</th>
+							</tr>
+						</thead>
+						<tfoot>
+							<tr>
+								<th>FID</th>
+								<th>Provinsi</th>
+								<th>Kasus Postif</th>
+								<th>Kasus Sembuh</th>
+								<th>Kasus Meninggal</th>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+<!-- JQuery -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+<!-- Datatables -->
+<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+
+<!-- MAP BOX FOR MAP COVID-19 -->
+<script>
+	mapboxgl.accessToken = 'pk.eyJ1Ijoia3NhdHJpYWtuaWdodCIsImEiOiJja2UwdzVkcHkwODZiMnhydXoxZWJoeGUzIn0.9ztb8ew1-ZGFNAvd9Ki8RQ';
+	var map = new mapboxgl.Map({
+		container: 'map',
+		style: 'mapbox://styles/mapbox/streets-v11',
+		center: [117.8888,-2.44565],
+		zoom: 4
+	});
+
+	// GET DATA AJAX
+	function getCovid(handleData) {
+		$.ajax({
+			url:"https://opendata.arcgis.com/datasets/0c0f4558f1e548b68a1c82112744bad3_0.geojson",  
+			success:function(data) {
+			handleData(data); 
+			}
+		});
+	}
+
+	getCovid(function(data){
+		
+		map.on('load', function() {
+
+			// console.log(data);
+			map.addSource('places', {
+				'type': 'geojson',
+				'data': 'https://opendata.arcgis.com/datasets/0c0f4558f1e548b68a1c82112744bad3_0.geojson'
+			});
+			
+			// Add a layer showing the places.
+			map.addLayer({
+				'id': 'dataClick',
+				'type': 'circle',
+				'source': 'places',
+				'paint': {
+					'circle-radius': 10,
+					'circle-color': 'rgba(133,18,15,0.7)',
+				}
+			});
+
+			// When a click event occurs on a feature in the places layer, open a popup at the
+			// location of the feature, with description HTML from its properties.
+			map.on('click', 'dataClick', function(e) {
+
+				// console.log(data, e.features[0]);
+				
+				// DESC
+				var Kasus_Meni = e.features[0].properties.Kasus_Meni;
+				var Kasus_Posi = e.features[0].properties.Kasus_Posi;
+				var Kasus_Semb = e.features[0].properties.Kasus_Semb;
+				var Kode_Provi = e.features[0].properties.Kode_Provi;
+				var Provinsi = e.features[0].properties.Provinsi;
+
+				var desc = '<div style="width:'+'200px'+' "><span><h4>'+Provinsi+'</h4></span><br><span><b>Kasus Meninggal</b> :'+Kasus_Meni+'</span><br><span><b>Kasus Positif</b> :'+Kasus_Posi+'</span><br><span><b>Kasus Sembuh</b> :'+Kasus_Semb+'</span><br></div>';
+
+				var coordinates = e.features[0].geometry.coordinates.slice();
+		
+				// Ensure that if the map is zoomed out such that multiple
+				// copies of the feature are visible, the popup appears
+				// over the copy being pointed to.
+				while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+					coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+				}
+		
+				new mapboxgl.Popup()
+					.setLngLat(coordinates)
+					.setHTML(desc)
+					.addTo(map);
+			});
+			
+
+				// Change the cursor to a pointer when the mouse is over the places layer.
+			map.on('mouseenter', 'dataClick', function() {
+				map.getCanvas().style.cursor = 'pointer';
+			});
+		
+			// Change it back to a pointer when it leaves.
+			map.on('mouseleave', 'dataClick', function() {
+				map.getCanvas().style.cursor = '';
+			});
+
+			// MAKE CUSTOM MARKER
+			data.features.forEach(function(marker) {
+				var el = document.createElement('div');
+				el.className = 'marker';
+				el.style.backgroundColor = 'rgba(133,18,15,0.7)';
+
+				var jum_kasus = marker.properties.Kasus_Posi / 1000;
+				var size = jum_kasus + 20 ;  
+				el.style.width = size+'px';
+				el.style.height = size+'px';
+				el.style.borderRadius = size/2+'px';
+
+				var marker = new mapboxgl.Marker(el)
+				.setLngLat(marker.geometry.coordinates)
+				.addTo(map);
+			});
+		});
+
+	});
+</script>
+
+<!-- Total Covid & DATATABLES -->
+<script defer>
+	
+	function separator(x) {
+		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+	}
+
+	function getCovid(handleData) {
+		$.ajax({
+			url:"https://opendata.arcgis.com/datasets/0c0f4558f1e548b68a1c82112744bad3_0.geojson",  
+			success:function(data) {
+				handleData(data); 
+			}
+		});
+	}
+
+	getCovid(function(data){
+		
+		var Kasus_Meni = 0;
+		var Kasus_Posi = 0;
+		var Kasus_Semb = 0;
+
+		data.features.forEach(function(marker) {
+			Kasus_Meni += parseFloat( marker.properties.Kasus_Meni )
+			Kasus_Posi += parseFloat( marker.properties.Kasus_Posi )
+			Kasus_Semb += parseFloat( marker.properties.Kasus_Semb )
+		});
+
+
+		// DISPLAY TOTAL
+		$('#Kasus_Meni').html( separator(Kasus_Meni) );
+		$('#Kasus_Posi').html( separator(Kasus_Posi) );
+		$('#Kasus_Semb').html( separator(Kasus_Semb) );
+
+		// DISPLAY DATATABLES
+
+		// console.log(data.features[34],);
+
+		var table = $('#tabelCovid').dataTable({
+            // "bAutoWidth" : false,
+			"responsive": true,
+            "aaData" : data.features.slice(0, 34),
+            "columns" : [ 
+
+				{ "data": "properties.FID" },
+				{ "data": "properties.Provinsi" },
+				{ "data": "properties.Kasus_Posi" },
+				{ "data": "properties.Kasus_Semb" },
+				{ "data": "properties.Kasus_Meni" },
+
+			]
+        })
+	});
+
+</script>
