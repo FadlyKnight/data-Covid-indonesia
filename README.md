@@ -1,1 +1,3 @@
-# data-Covid-indonesia
+# Data Covid Indonesia
+
+Simpel Maps Covid Indonesia Menggunakan Mapbox
